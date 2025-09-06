@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap" rel="stylesheet">
+        <link href="styles.css" rel="stylesheet">
+        <title>Trivia!</title>
+        <script>
+            // TODO: Add code to check answers to questions
+            window.onload = function()
+            {
+            // Assume answer1 is the correct answer
+                const correctAnswer = "button2";
+
+                // Get all answer buttons
+                const buttons = document.querySelectorAll(".answers button");
+                response = document.querySelector('p');
+                // Add event listeners to each button
+                buttons.forEach(button => {
+                    button.addEventListener("click", function() {
+
+                        if (this.id === correctAnswer)
+                        {
+                            this.style.backgroundColor = "green"; // Correct answer
+                            response.innerHTML = "Correct!";
+                        }
+                        else
+                         {
+                            this.style.backgroundColor = "red"; // Incorrect answer
+                            response.innerHTML = "Incorrect";
+                        }
+                    });
+                });
+            //to check for free response
+            let keys=["good","challenging","tough"];
+
+                answer2 = document.getElementById("response");
+                check = document.getElementById("submit");
+                response2 = document.getElementById("message2");
+
+
+             check.addEventListener("click",function(){
+                    let r2 = false;
+                    for(key of keys)
+                    {
+                        if((answer2.value).includes(key))
+                        {
+                            response2.innerHTML = "Correct!";
+                            answer2.style.backgroundColor="green";
+                            r2 = true;
+                        }
+                    }
+
+                    if (r2 == false)
+                    {
+                        response2.innerHTML = "Incorrect";
+                        answer2.style.backgroundColor="red";
+                    }
+                });
+
+            }
+        </script>
+    </head>
+    <body>
+        <div class="header">
+            <h1>Trivia!</h1>
+        </div>
+
+        <div class="container">
+            <div class="section">
+                <h2>Part 1: Multiple Choice </h2>
+                <hr>
+                <!-- TODO: Add multiple choice question here -->
+                 <h3>What's the name of the most famous penguin in the World?</h3>
+                 <p></p>
+                    <div class="answers">
+                        <button id = "button1">John</button>
+                        <button id = "button2">Major General Sir Nils Olav III</button>
+                        <button id = "button3">Patrick</button>
+                        <button id = "button4">Baigan</button>
+                        <button id = "button5">Penguin</button>
+                    </div>
+
+
+                <hr>
+            </div>
+
+            <div class="section">
+                <h2>Part 2: Free Response</h2>
+                <hr>
+                <!-- TODO: Add free response question here -->
+                 <h3>What do you think about Freelancing?</h3>
+                 <p id="message2"></p>
+
+                    <input autocomplete="off" id="response" placeholder="Your Response" type="text">
+                    <button id = "submit" autofocus>Submit</button>
+
+            </div>
+        </div>
+    </body>
+</html>

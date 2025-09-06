@@ -1,2 +1,0 @@
-# SIH-project
-Static website
