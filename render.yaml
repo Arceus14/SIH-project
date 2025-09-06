@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: flask-sih-app
+    env: python
+    plan: free
+    branch: main
+    buildCommand: ""
+    startCommand: gunicorn app:app
+    autoDeploy: true
