@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sparkle — Mental Health Companion</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<!-- Font (keep this once) -->
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"/>
+
+<style>
+  /* Tunables */
+  :root {
+    --header-h: 64px;         /* set to your actual header height */
+    --sheet-w: 60vw;          /* 60% of background width */
+    --radius-lg: 18px;
+  }
+
+  /* Modal container and backdrop (do not cover header/logo) */
+  .mbti-modal { position: fixed; inset: 0; z-index: 1100; display: none; }
+  .mbti-modal.show { display: block; }
+
+  /* Backdrop starts below header so the logo/header remain visible and clickable */
+  .mbti-backdrop {
+    position: absolute;
+    left: 0; right: 0; top: var(--header-h); bottom: 0;
+    background: rgba(31,42,68,0.28);
+    backdrop-filter: blur(6px);
+  }
+
+  /* Phone-like sheet: centered, 60% width, height equals conversation area (viewport minus header) */
+  .mbti-sheet {
+    position: absolute;
+    top: var(--header-h);
+    left: 50%;
+    transform: translateX(-50%);
+    width: var(--sheet-w);
+    height: calc(100vh - var(--header-h));
+    max-width: 820px;                   /* guardrails on large screens */
+    background: var(--card, #fff);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 22px 60px rgba(31,42,68,.20);
+    display: flex; flex-direction: column; overflow: hidden;
+    animation: sheetIn .18s ease-out;
+    z-index: 1101;
+    font-family: 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  @keyframes sheetIn { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+  /* Header inside the sheet */
+  .mbti-sheet-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-bottom: 1px solid #f3e3ef;
+    background:
+      radial-gradient(900px 300px at 0% 0%, rgba(255,122,196,.10) 0%, transparent 60%),
+      radial-gradient(900px 300px at 100% 0%, rgba(0,194,168,.10) 0%, transparent 60%);
+  }
+  .mbti-sheet-header h2 {
+    font-size: 20px; font-weight: 700; margin: 0; color: var(--ink, #1f2a44);
+  }
+  .mbti-close {
+    border: none; background: #f6f7ff; color: var(--ink, #1f2a44);
+    width: 40px; height: 40px; border-radius: 10px; cursor: pointer;
+    border: 1px solid #e9e9ff; font-size: 18px;
+  }
+  .mbti-close:hover { background: #ecefff; }
+
+  /* Body area scrolls; keep good padding */
+  .mbti-sheet-body {
+    padding: 18px; overflow: auto; height: calc(100% - 64px);
+    color: var(--ink, #1f2a44);
+  }
+
+  /* Progress bar */
+  .mbti-progress { position: relative; height: 10px; background: #faf1f8; border: 1px solid #f4d8ea; border-radius: 999px; margin: 0 0 18px; }
+  .mbti-progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary,#ff7ac4), #ff9fd4); border-radius: 999px; transition: width .25s ease; }
+  .mbti-progress-text { margin-top: 10px; font-size: 13px; color: var(--muted,#5b6b8c); text-align: center; }
+
+  /* Stage and transitions */
+  .q-stage { min-height: 340px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 24px; }
+  .fade-in { animation: fadeIn .22s ease; }
+  .fade-out { animation: fadeOut .18s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: translateY(0);} }
+  @keyframes fadeOut { from { opacity: 1; transform: translateY(0);} to { opacity: 0; transform: translateY(-4px);} }
+
+  /* Centered, larger question text */
+  .q-text {
+    font-size: 26px; line-height: 1.3; font-weight: 700; margin-bottom: 22px;
+    max-width: 720px;
+  }
+
+  /* Likert row centered with comfortable hit targets */
+  .likert { display: flex; gap: 12px; width: 100%; max-width: 640px; justify-content: center; }
+  .likert label {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 16px 10px; border-radius: 14px; cursor: pointer; user-select: none;
+    background: #fff9fc; border: 1px solid #ffd6ec; color: var(--ink,#1f2a44);
+    font-size: 14px; font-weight: 600; transition: background .15s, transform .05s;
+    min-width: 110px; /* ensures big tap targets */
+  }
+  .likert label:hover { background: #ffe9f5; transform: translateY(-2px); }
+  .likert input[type="radio"] { display: none; }
+  .likert input[type="radio"]:checked + span {
+    background: linear-gradient(135deg, var(--primary,#ff7ac4), #ff9fd4);
+    color: #fff; padding: 6px 12px; border-radius: 10px;
+  }
+  /* Proportional widths for the sentiment ends */
+  .likert label:nth-child(1) { flex: 1.3; }
+  .likert label:nth-child(2) { flex: 1.15; }
+  .likert label:nth-child(3) { flex: 0.9; }
+  .likert label:nth-child(4) { flex: 1.15; }
+  .likert label:nth-child(5) { flex: 1.3; }
+
+  /* Big, clickable actions */
+  .mbti-actions {
+    margin-top: 28px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+  }
+  .mbti-actions .btn {
+    border: none; border-radius: 14px; cursor: pointer;
+    padding: 14px 26px; font-size: 16px; font-weight: 700;
+    background: linear-gradient(135deg, var(--primary,#ff7ac4), #ff9fd4); color: #fff;
+    box-shadow: 0 12px 28px rgba(255,122,196,.25);
+  }
+  .mbti-actions .btn.ghost {
+    background: #f6f7ff; color: var(--ink,#1f2a44); border: 1px solid #e6e9ff; box-shadow: none;
+  }
+  .mbti-actions .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+  /* Result view cards/chips keep your theme */
+  .mbti-result-head { text-align: center; margin: 8px 0 18px; }
+  .mbti-type-badge { display: inline-block; padding: 8px 12px; border-radius: 12px; font-weight: 800; letter-spacing: .6px; background: #e8fff9; color: #0e6e61; border: 1px solid #c9f3ea; }
+  #mbtiTypeName { margin: 8px 0 6px; font-size: 20px; }
+  .mbti-grid { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 900px) { .mbti-grid { grid-template-columns: 1fr; } }
+  .mbti-card { background: #fff; border: 1px solid #f1e3f0; border-radius: 16px; padding: 14px; box-shadow: 0 6px 18px rgba(31,42,68,.06); }
+  .mbti-card-title { font-weight: 800; margin-bottom: 8px; }
+  .mbti-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { background: #fff9fc; border: 1px solid #ffd6ec; color: var(--ink,#1f2a44); border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 700; }
+  .mbti-list { margin: 0; padding-left: 18px; }
+  .mbti-list li { margin-bottom: 6px; }
+</style>
+
+
+
+
+  <style>
+    :root{
+      --bg: #f6f9ff;
+      --card: #ffffff;
+      --ink: #1f2a44;
+      --muted: #5b6b8c;
+      --primary: #ff7ac4;
+      --accent: #00c2a8;
+      --bubble-user: #ffe9f5;
+      --bubble-bot: #e8fff9;
+      --shadow: 0 10px 30px rgba(31,42,68,.12);
+      --radius: 16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: Inter, system-ui, sans-serif;
+      color:var(--ink); background: linear-gradient(135deg,#fff5fa 0%,#f2fff9 100%);
+      min-height:100vh; display:flex; align-items:center; justify-content:center; padding:12px;
+    }
+    .card{
+      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+      display:flex; flex-direction:column; width:100%; max-width:600px; height:90vh;
+    }
+    header{
+      padding:16px; border-bottom:1px solid #fce4f1; display:flex; align-items:center; justify-content:space-between;
+      background: radial-gradient(800px 800px at -20% -20%, #ffeaf5 0%, transparent 60%);
+    }
+    .logo{
+      width:40px; height:40px; border-radius:50%; overflow:hidden;
+      display:grid; place-items:center; background:none;
+    }
+    .logo img{
+      width:100%; height:100%; object-fit:cover;
+    }
+    .header-left{
+      display:flex; align-items:center; gap:12px;
+    }
+    h1{font-size:18px; margin:0}
+    .sub{font-size:13px; color:var(--muted);}
+    /* Icon button for New Chat */
+    .icon-btn{
+      border:none; background:#f1f3fe; color:var(--ink);
+      width:36px; height:36px; border-radius:50%; cursor:pointer;
+      border:1px solid #e6e9ff; display:flex; align-items:center; justify-content:center;
+      font-size:16px; transition:background 0.2s, transform 0.1s;
+    }
+    .icon-btn:hover{
+      background:#e6e9ff;
+    }
+    .icon-btn:active{
+      transform:scale(0.95);
+    }
+    .chat-body{
+      flex:1; padding:16px; overflow:auto; display:flex; flex-direction:column; gap:14px;
+      background:
+        radial-gradient(600px 120px at 20% 0%, rgba(0,194,168,.12) 0%, transparent 60%),
+        radial-gradient(600px 120px at 80% 0%, rgba(255,122,196,.12) 0%, transparent 60%);
+    }
+    .bubble{
+      max-width:80%; padding:12px 14px; border-radius:14px; box-shadow: 0 4px 16px rgba(0,0,0,.06);
+      line-height:1.45;
+    }
+    .bot{ align-self:flex-start; background:var(--bubble-bot); border:1px solid #c9f3ea; }
+    .user{ align-self:flex-end; background:var(--bubble-user); border:1px solid #ffd6ec; }
+    .chat-input{
+      display:flex; gap:10px; padding:12px; border-top:1px solid #fce4f1; background:#fff;
+    }
+    textarea{
+      flex:1; min-height:56px; max-height:140px; border-radius:12px;
+      border:1px solid #ffd6ec; background:#fff9fc; padding:12px; font-size:14px;
+      resize:none; outline:none;
+    }
+    textarea:focus{
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255,122,196,.12);
+    }
+    .btn{
+      border:none; background: linear-gradient(135deg, var(--primary), #ff9fd4); color:#fff;
+      padding:0 16px; font-weight:600; border-radius:12px; cursor:pointer; box-shadow:var(--shadow);
+    }
+    .footer{
+      padding:8px 16px; font-size:12px; color:var(--muted); border-top:1px solid #fce4f1; background:#fff;
+    }
+  </style>
+</head>
+<body>
+  <section class="card">
+    <header>
+      <div class="header-left">
+        <div class="logo">
+          <img src="{{ url_for('static', filename='Sparkle.png') }}" alt="Sparkle Logo">
+        </div>
+        <div>
+          <h1>Sparkle</h1>
+          <div class="sub">Your positive mental health companion</div>
+        </div>
+      </div>
+      <form action="{{ url_for('new_chat') }}" method="get" onsubmit="return confirmNewChat();">
+        <button type="submit" class="icon-btn" title="Start New Chat">⟳</button>
+      </form>
+
+
+
+
+
+
+
+
+
+
+
+
+
+      <!-- Header trigger (place next to New Chat) -->
+<form action="#" onsubmit="openMBTIModal(); return false;">
+  <button type="button" class="icon-btn" title="Check Your MBTI" onclick="openMBTIModal()">🧠</button>
+</form>
+
+<!-- MBTI Modal -->
+<div id="mbtiModal" class="mbti-modal" aria-hidden="true">
+  <div class="mbti-backdrop" onclick="closeMBTIModal()"></div>
+
+  <div class="mbti-sheet" role="dialog" aria-modal="true" aria-labelledby="mbtiTitle">
+    <div class="mbti-sheet-header">
+      <h2 id="mbtiTitle">Check Your MBTI</h2>
+      <button class="mbti-close" aria-label="Close" onclick="closeMBTIModal()">✕</button>
+    </div>
+
+    <div class="mbti-sheet-body">
+      <!-- Progress -->
+      <div class="mbti-progress">
+        <div id="mbtiProgressBar" class="mbti-progress-bar"></div>
+        <div id="mbtiProgressText" class="mbti-progress-text">1 / 16</div>
+      </div>
+
+      <!-- Question stage -->
+      <section id="mbtiStage" class="q-stage fade-in" aria-live="polite">
+        <div id="mbtiQuestion" class="q-text">Loading…</div>
+        <form id="mbtiForm" class="likert-row" onsubmit="nextMBTI(); return false;">
+          <!-- Likert options injected here -->
+          <div id="mbtiOptions" class="likert"></div>
+
+          <div class="mbti-actions">
+            <button type="button" class="btn ghost" onclick="prevMBTI()" id="mbtiPrevBtn" disabled>Back</button>
+            <button type="submit" class="btn" id="mbtiNextBtn" disabled>Next</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Result view -->
+      <section id="mbtiResult" class="mbti-result" hidden>
+        <div class="mbti-result-head">
+          <div class="mbti-type-badge" id="mbtiTypeBadge">XXXX</div>
+          <h3 id="mbtiTypeName">Your type</h3>
+          <p id="mbtiTypeDesc" class="mbti-sub"></p>
+        </div>
+
+        <div class="mbti-grid">
+          <div class="mbti-card">
+            <div class="mbti-card-title">Your preferences</div>
+            <div class="mbti-chips" id="mbtiChips"></div>
+          </div>
+          <div class="mbti-card">
+            <div class="mbti-card-title">Study & focus tips</div>
+            <ul class="mbti-list" id="mbtiTips"></ul>
+          </div>
+        </div>
+
+        <div class="mbti-actions">
+          <button type="button" class="btn" onclick="retakeMBTI()">Retake</button>
+          <button type="button" class="btn ghost" onclick="closeMBTIModal()">Close</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- Better font (optional) -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+
+
+
+
+
+
+
+
+  </header>
+
+    <div class="chat-body" id="chatBody">
+      {% set non_system = history | selectattr('role', 'ne', 'system') | list if history is defined else [] %}
+      {% if not non_system %}
+        <div class="bubble bot">
+          Hi! I’m Sparkle ✨ What’s on your mind today?
+        </div>
+      {% endif %}
+
+      {% if history %}
+        {% for msg in history %}
+          {% if msg.role != 'system' %}
+            <div class="bubble {{ 'user' if msg.role == 'user' else 'bot' }}">
+              {{ msg.content }}
+            </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    </div>
+
+    <form id="chatForm" name="chatForm" class="chat-input" action="/submit" method="POST">
+      <textarea id="chatText" name="prompt" placeholder="Type your message…" required></textarea>
+      <button class="btn" type="submit">Send</button>
+    </form>
+
+    <div class="footer">
+      For urgent help, reach out to a trusted adult or local helpline immediately.
+    </div>
+  </section>
+
+  <script>
+    function confirmNewChat() {
+      return confirm("Are you sure you want to start a new chat? This will clear your conversation history.");
+    }
+  </script>
+
+
+
+  <script>
+/* 16 questions: {q, dim:[proLetter, conLetter]} */
+const mbtiData = [
+  {q:"You enjoy being the center of attention.", dim:["E","I"]},
+  {q:"You are energized by social gatherings.", dim:["E","I"]},
+  {q:"You find it easy to approach and talk to new people.", dim:["E","I"]},
+  {q:"After a busy day, you prefer to recharge alone rather than with others.", dim:["I","E"]},
+
+  {q:"You rely more on facts and past experience than theories.", dim:["S","N"]},
+  {q:"You prefer practical tasks over exploring abstract possibilities.", dim:["S","N"]},
+  {q:"You focus more on present details than future possibilities.", dim:["S","N"]},
+  {q:"You enjoy imagining what could be rather than what is.", dim:["N","S"]},
+
+  {q:"You make decisions using logic and consistency over empathy.", dim:["T","F"]},
+  {q:"You value fairness and principles over personal circumstances.", dim:["T","F"]},
+  {q:"You prioritize harmony and people’s feelings in decisions.", dim:["F","T"]},
+  {q:"You tend to consider the human impact before the numbers.", dim:["F","T"]},
+
+  {q:"You prefer a structured plan over going with the flow.", dim:["J","P"]},
+  {q:"You like closing tasks early rather than keeping options open.", dim:["J","P"]},
+  {q:"You are flexible and comfortable adapting plans last minute.", dim:["P","J"]},
+  {q:"You feel best when your schedule is organized and decided.", dim:["J","P"]},
+];
+
+/* Type profiles */
+const mbtiProfiles = {
+  ISTJ:{name:"Logistician",desc:"Responsible, detail-focused, and reliable. Prefers structure and clear expectations.",tips:["Use checklists and timelines.","Break tasks into well-defined steps.","Study in quiet, predictable spaces."]},
+  ISFJ:{name:"Defender",desc:"Supportive, observant, and patient. Motivated by helping and duty.",tips:["Create gentle routines and reward milestones.","Study with purpose—link tasks to people helped.","Use tidy, calm environments."]},
+  INFJ:{name:"Advocate",desc:"Insightful, idealistic, and purpose-driven. Seeks meaning and depth.",tips:["Tie study goals to your values.","Alternate deep work with reflective breaks.","Summarize concepts in your own words."]},
+  INTJ:{name:"Architect",desc:"Strategic, independent, and future-focused. Loves systems and mastery.",tips:["Plan backwards from outcomes.","Use spaced repetition and concept maps.","Protect long, interruption-free blocks."]},
+  ISTP:{name:"Virtuoso",desc:"Hands-on, analytical, and adaptable. Learns best by doing.",tips:["Apply theory to mini-projects.","Use short, intense sprints.","Keep tools and examples nearby."]},
+  ISFP:{name:"Adventurer",desc:"Sensitive, creative, and spontaneous. Values authenticity and experience.",tips:["Make study visually engaging.","Use short sessions with variety.","Link topics to real-life interests."]},
+  INFP:{name:"Mediator",desc:"Imaginative, empathetic, and values-driven. Motivated by meaning.",tips:["Set heartfelt reasons for each goal.","Journal brief reflections after sessions.","Use gentle structure with flexibility."]},
+  INTP:{name:"Logician",desc:"Curious, theoretical, and independent. Loves patterns and puzzles.",tips:["Teach concepts to an imaginary class.","Use whiteboards and mind maps.","Schedule breaks to avoid rabbit holes."]},
+  ESTP:{name:"Entrepreneur",desc:"Energetic, pragmatic, and action-oriented. Thrives on real results.",tips:["Turn studying into challenges or timers.","Use practical examples and case studies.","Move between tasks to stay engaged."]},
+  ESFP:{name:"Entertainer",desc:"Outgoing, warm, and present-focused. Enjoys social learning.",tips:["Study with peers; discuss out loud.","Use colorful, interactive materials.","Reward progress with short fun breaks."]},
+  ENFP:{name:"Campaigner",desc:"Enthusiastic, imaginative, and people-centered. Loves possibilities.",tips:["Capture ideas; then choose one path.","Use variety but limit task switching.","Anchor sessions with a simple plan."]},
+  ENTP:{name:"Debater",desc:"Inventive, quick, and loves to challenge ideas.",tips:["Debate topics or play devil’s advocate.","Prototype ideas quickly.","Time-box exploration to ship results."]},
+  ESTJ:{name:"Executive",desc:"Organized, direct, and practical. Values efficiency and standards.",tips:["Set measurable targets per session.","Use calendars and checklists.","Review outcomes weekly."]},
+  ESFJ:{name:"Consul",desc:"Caring, cooperative, and dependable. Team-oriented and structured.",tips:["Study with accountability partners.","Use clear schedules and shared goals.","Teach others to reinforce learning."]},
+  ENFJ:{name:"Protagonist",desc:"Encouraging, organized, and inspiring. Leads with vision and care.",tips:["Set meaningful goals tied to impact.","Mix solo focus with guided group sessions.","Reflect on progress to stay aligned."]},
+  ENTJ:{name:"Commander",desc:"Strategic, decisive, and goal-driven. Thrives on challenge.",tips:["Plan objectives and KPIs for study.","Tackle hardest tasks first.","Delegate or automate low-value work."]},
+};
+
+let mbtiIndex = 0;                 // current question index
+const answers = [];                // store values like "E3", "I2", etc.
+let renderedOnce = false;          // ensure options wired up once
+
+function openMBTIModal() {
+  const modal = document.getElementById('mbtiModal');
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden','false');
+  document.addEventListener('keydown', escClose);
+
+  if (!renderedOnce) {
+    renderCurrentQuestion(true);
+    renderedOnce = true;
+  } else {
+    renderCurrentQuestion(false);
+  }
+}
+function closeMBTIModal() {
+  const modal = document.getElementById('mbtiModal');
+  modal.classList.remove('show');
+  modal.setAttribute('aria-hidden','true');
+  document.removeEventListener('keydown', escClose);
+}
+function escClose(e){ if (e.key === 'Escape') closeMBTIModal(); }
+
+function renderCurrentQuestion(initialFade) {
+  const q = mbtiData[mbtiIndex];
+  const qEl = document.getElementById('mbtiQuestion');
+  const optsEl = document.getElementById('mbtiOptions');
+  const nextBtn = document.getElementById('mbtiNextBtn');
+  const prevBtn = document.getElementById('mbtiPrevBtn');
+
+  // Progress
+  const pct = ((mbtiIndex) / mbtiData.length) * 100;
+  document.getElementById('mbtiProgressBar').style.width = `${pct}%`;
+  document.getElementById('mbtiProgressText').textContent = `${mbtiIndex+1} / ${mbtiData.length}`;
+
+  // Text
+  qEl.textContent = q.q;
+
+  // Options (Likert)
+  optsEl.innerHTML = '';
+  const opts = [
+    {label:'Strongly agree', val:`${q.dim[0]}3`},
+    {label:'Agree',          val:`${q.dim[0]}2`},
+    {label:'Neutral',        val:`${q.dim[0]}1`},
+    {label:'Disagree',       val:`${q.dim[1]}2`},
+    {label:'Strongly disagree', val:`${q.dim[1]}3`},
+  ];
+  opts.forEach((o,i)=>{
+    const id = `q${mbtiIndex}_opt${i}`;
+    const checked = answers[mbtiIndex] === o.val ? 'checked' : '';
+    optsEl.insertAdjacentHTML('beforeend', `
+      <label for="${id}">
+        <input type="radio" id="${id}" name="mbti_${mbtiIndex}" value="${o.val}" ${checked}>
+        <span>${o.label}</span>
+      </label>
+    `);
+  });
+
+  // Buttons
+  prevBtn.disabled = mbtiIndex === 0;
+  nextBtn.textContent = (mbtiIndex === mbtiData.length - 1) ? 'See results' : 'Next';
+  nextBtn.disabled = !answers[mbtiIndex];
+
+  // Enable Next on selection
+  optsEl.querySelectorAll('input[type="radio"]').forEach(r=>{
+    r.addEventListener('change', ()=>{
+      answers[mbtiIndex] = r.value;
+      document.getElementById('mbtiNextBtn').disabled = false;
+    });
+  });
+
+  // Fade
+  const stage = document.getElementById('mbtiStage');
+  if (!initialFade) {
+    stage.classList.remove('fade-in'); // reset
+    void stage.offsetWidth;            // reflow to restart animation
+    stage.classList.add('fade-in');
+  }
+}
+
+function nextMBTI() {
+  const stage = document.getElementById('mbtiStage');
+  stage.classList.remove('fade-in');
+  stage.classList.add('fade-out');
+
+  setTimeout(()=>{
+    stage.classList.remove('fade-out');
+
+    if (mbtiIndex < mbtiData.length - 1) {
+      mbtiIndex++;
+      renderCurrentQuestion(false);
+    } else {
+      // Completed
+      showMBTIResult(computeType(), computeScores());
+    }
+  }, 160);
+}
+
+function prevMBTI() {
+  if (mbtiIndex === 0) return;
+  const stage = document.getElementById('mbtiStage');
+  stage.classList.remove('fade-in');
+  stage.classList.add('fade-out');
+
+  setTimeout(()=>{
+    stage.classList.remove('fade-out');
+    mbtiIndex--;
+    renderCurrentQuestion(false);
+  }, 160);
+}
+
+function computeScores(){
+  const scores = {E:0,I:0,S:0,N:0,T:0,F:0,J:0,P:0};
+  answers.forEach(v=>{
+    const letter = v.charAt(0);
+    const weight = parseInt(v.charAt(1),10);
+    scores[letter] += weight;
+  });
+  return scores;
+}
+
+function computeType(){
+  const s = computeScores();
+  return (s.E >= s.I ? 'E' : 'I') +
+         (s.S >= s.N ? 'S' : 'N') +
+         (s.T >= s.F ? 'T' : 'F') +
+         (s.J >= s.P ? 'J' : 'P');
+}
+
+function showMBTIResult(type, scores){
+  // Fill progress to 100%
+  document.getElementById('mbtiProgressBar').style.width = '100%';
+  document.getElementById('mbtiProgressText').textContent = `${mbtiData.length} / ${mbtiData.length}`;
+
+  // Toggle views
+  document.getElementById('mbtiStage').hidden = true;
+  const result = document.getElementById('mbtiResult');
+  result.hidden = false;
+
+  // Content
+  const profile = mbtiProfiles[type] || {name:"Your type",desc:"A balanced mix of preferences.",tips:[]};
+  document.getElementById('mbtiTypeBadge').textContent = type;
+  document.getElementById('mbtiTypeName').textContent = profile.name;
+  document.getElementById('mbtiTypeDesc').textContent = profile.desc;
+
+  const chips = [
+    scores.E >= scores.I ? `Extraversion (E)` : `Introversion (I)`,
+    scores.S >= scores.N ? `Sensing (S)` : `Intuition (N)`,
+    scores.T >= scores.F ? `Thinking (T)` : `Feeling (F)`,
+    scores.J >= scores.P ? `Judging (J)` : `Perceiving (P)`,
+  ];
+  const chipsEl = document.getElementById('mbtiChips');
+  chipsEl.innerHTML = '';
+  chips.forEach(c=>{
+    const el = document.createElement('span');
+    el.className = 'chip';
+    el.textContent = c;
+    chipsEl.appendChild(el);
+  });
+
+  const tipsEl = document.getElementById('mbtiTips');
+  tipsEl.innerHTML = '';
+  (profile.tips || []).forEach(t=>{
+    const li = document.createElement('li');
+    li.textContent = t;
+    tipsEl.appendChild(li);
+  });
+}
+
+function retakeMBTI(){
+  // Reset
+  mbtiIndex = 0;
+  answers.length = 0;
+  document.getElementById('mbtiResult').hidden = true;
+  document.getElementById('mbtiStage').hidden = false;
+  document.getElementById('mbtiProgressBar').style.width = '0%';
+  document.getElementById('mbtiProgressText').textContent = `1 / ${mbtiData.length}`;
+  renderCurrentQuestion(true);
+}
+</script>
+
+
+
+
+
+</body>
+</html>
