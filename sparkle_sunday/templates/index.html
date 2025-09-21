@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sparkle — Mental Health Companion</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+
+
+<!-- Font (keep this once) -->
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"/>
+
+</head>
+<body>
+  <section class="card">
+    <header>
+      <div class="header-left">
+        <div class="logo">
+          <img src="{{ url_for('static', filename='Sparkle.png') }}" alt="Sparkle Logo">
+        </div>
+        <div>
+          <h1>Sparkle</h1>
+          <div class="sub">Your positive mental health companion</div>
+        </div>
+      </div>
+      <form action="{{ url_for('new_chat') }}" method="get" onsubmit="return confirmNewChat();">
+        <button type="submit" class="icon-btn" title="Start New Chat">⟳</button>
+      </form>
+
+
+
+
+
+
+
+
+
+
+
+
+
+      <!-- Header trigger (place next to New Chat) -->
+<form action="#" onsubmit="openMBTIModal(); return false;">
+  <button type="button" class="icon-btn" title="Check Your MBTI" onclick="openMBTIModal()">🧠</button>
+</form>
+
+<!-- MBTI Modal -->
+<div id="mbtiModal" class="mbti-modal" aria-hidden="true">
+  <div class="mbti-backdrop" onclick="closeMBTIModal()"></div>
+
+  <div class="mbti-sheet" role="dialog" aria-modal="true" aria-labelledby="mbtiTitle">
+    <div class="mbti-sheet-header">
+      <h2 id="mbtiTitle">Check Your MBTI</h2>
+      <button class="mbti-close" aria-label="Close" onclick="closeMBTIModal()">✕</button>
+    </div>
+
+    <div class="mbti-sheet-body">
+      <!-- Progress -->
+      <div class="mbti-progress">
+        <div id="mbtiProgressBar" class="mbti-progress-bar"></div>
+        <div id="mbtiProgressText" class="mbti-progress-text">1 / 16</div>
+      </div>
+
+      <!-- Question stage -->
+      <section id="mbtiStage" class="q-stage fade-in" aria-live="polite">
+        <div id="mbtiQuestion" class="q-text">Loading…</div>
+        <form id="mbtiForm" class="likert-row" onsubmit="nextMBTI(); return false;">
+          <!-- Likert options injected here -->
+          <div id="mbtiOptions" class="likert"></div>
+
+          <div class="mbti-actions">
+            <button type="button" class="btn ghost" onclick="prevMBTI()" id="mbtiPrevBtn" disabled>Back</button>
+            <button type="submit" class="btn" id="mbtiNextBtn" disabled>Next</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Result view -->
+      <section id="mbtiResult" class="mbti-result" hidden>
+        <div class="mbti-result-head">
+          <div class="mbti-type-badge" id="mbtiTypeBadge">XXXX</div>
+          <h3 id="mbtiTypeName">Your type</h3>
+          <p id="mbtiTypeDesc" class="mbti-sub"></p>
+        </div>
+
+        <div class="mbti-grid">
+          <div class="mbti-card">
+            <div class="mbti-card-title">Your preferences</div>
+            <div class="mbti-chips" id="mbtiChips"></div>
+          </div>
+          <div class="mbti-card">
+            <div class="mbti-card-title">Study & focus tips</div>
+            <ul class="mbti-list" id="mbtiTips"></ul>
+          </div>
+        </div>
+
+        <div class="mbti-actions">
+          <button type="button" class="btn" onclick="retakeMBTI()">Retake</button>
+          <button type="button" class="btn ghost" onclick="submitMBTIAndClose()">Close</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- Better font (optional) -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+
+
+
+
+
+
+
+
+  </header>
+
+    <!-- Chat area -->
+<div class="chat-body" id="chatBody" aria-live="polite" aria-atomic="false">
+  {% set non_system = history | selectattr('role', 'ne', 'system') | list if history is defined else [] %}
+  {% if not non_system %}
+    <div class="bubble bot">
+      Hi! I’m Sparkle ✨ What’s on your mind today?
+    </div>
+  {% endif %}
+
+  {% if history %}
+    {% for msg in history %}
+      {% if msg.role != 'system' %}
+        <div class="bubble {{ 'user' if msg.role == 'user' else 'bot' }}">
+          {{ msg.content }}
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+</div>
+
+<!-- In MBTI Result view (unchanged): -->
+<!-- Close button already wired to submitMBTIAndClose -->
+<!-- <button type="button" class="btn ghost" onclick="submitMBTIAndClose()">Close</button> -->
+
+
+    <form id="chatForm" name="chatForm" class="chat-input" action="/submit" method="POST">
+      <textarea id="chatText" name="prompt" placeholder="Type your message…" required></textarea>
+      <button class="btn" type="submit">Send</button>
+    </form>
+
+    <div class="footer">
+      For urgent help, reach out to a trusted adult or local helpline immediately.
+    </div>
+  </section>
+
+
+
+</body>
+</html>

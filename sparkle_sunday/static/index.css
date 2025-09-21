@@ -1,0 +1,272 @@
+/*CSS for MBTI FORM*/
+
+
+
+
+
+
+
+
+  /* Tunables */
+  :root {
+    --header-h: 64px;         /* set to your actual header height */
+    --sheet-w: 60vw;          /* 60% of background width */
+    --radius-lg: 18px;
+  }
+
+  /* Modal container and backdrop (do not cover header/logo) */
+  .mbti-modal { position: fixed; inset: 0; z-index: 1100; display: none; }
+  .mbti-modal.show { display: block; }
+
+  /* Backdrop starts below header so the logo/header remain visible and clickable */
+  .mbti-backdrop {
+    position: absolute;
+    left: 0; right: 0; top: var(--header-h); bottom: 0;
+    background: rgba(31,42,68,0.28);
+    backdrop-filter: blur(6px);
+  }
+
+  /* Phone-like sheet: centered, 60% width, height equals conversation area (viewport minus header) */
+  .mbti-sheet {
+    position: absolute;
+    top: var(--header-h);
+    left: 50%;
+    transform: translateX(-50%);
+    width: var(--sheet-w);
+    height: calc(100vh - var(--header-h));
+    max-width: 820px;                   /* guardrails on large screens */
+    background: var(--card, #fff);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 22px 60px rgba(31,42,68,.20);
+    display: flex; flex-direction: column; overflow: hidden;
+    animation: sheetIn .18s ease-out;
+    z-index: 1101;
+    font-family: 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  @keyframes sheetIn { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+  /* Header inside the sheet */
+  .mbti-sheet-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-bottom: 1px solid #f3e3ef;
+    background:
+      radial-gradient(900px 300px at 0% 0%, rgba(255,122,196,.10) 0%, transparent 60%),
+      radial-gradient(900px 300px at 100% 0%, rgba(0,194,168,.10) 0%, transparent 60%);
+  }
+  .mbti-sheet-header h2 {
+    font-size: 20px; font-weight: 700; margin: 0; color: var(--ink, #1f2a44);
+  }
+  .mbti-close {
+    border: none; background: #f6f7ff; color: var(--ink, #1f2a44);
+    width: 40px; height: 40px; border-radius: 10px; cursor: pointer;
+    border: 1px solid #e9e9ff; font-size: 18px;
+  }
+  .mbti-close:hover { background: #ecefff; }
+
+  /* Body area scrolls; keep good padding */
+  .mbti-sheet-body {
+    padding: 18px; overflow: auto; height: calc(100% - 64px);
+    color: var(--ink, #1f2a44);
+  }
+
+  /* Progress bar */
+  .mbti-progress { position: relative; height: 10px; background: #faf1f8; border: 1px solid #f4d8ea; border-radius: 999px; margin: 0 0 18px; }
+  .mbti-progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary,#ff7ac4), #ff9fd4); border-radius: 999px; transition: width .25s ease; }
+  .mbti-progress-text { margin-top: 10px; font-size: 13px; color: var(--muted,#5b6b8c); text-align: center; }
+
+  /* Stage and transitions */
+  .q-stage { min-height: 340px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 24px; }
+  .fade-in { animation: fadeIn .22s ease; }
+  .fade-out { animation: fadeOut .18s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: translateY(0);} }
+  @keyframes fadeOut { from { opacity: 1; transform: translateY(0);} to { opacity: 0; transform: translateY(-4px);} }
+
+  /* Centered, larger question text */
+  .q-text {
+    font-size: 26px; line-height: 1.3; font-weight: 700; margin-bottom: 22px;
+    max-width: 720px;
+  }
+
+  /* Likert row centered with comfortable hit targets */
+  .likert { display: flex; gap: 12px; width: 100%; max-width: 640px; justify-content: center; }
+  .likert label {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 16px 10px; border-radius: 14px; cursor: pointer; user-select: none;
+    background: #fff9fc; border: 1px solid #ffd6ec; color: var(--ink,#1f2a44);
+    font-size: 14px; font-weight: 600; transition: background .15s, transform .05s;
+    min-width: 110px; /* ensures big tap targets */
+  }
+  .likert label:hover { background: #ffe9f5; transform: translateY(-2px); }
+  .likert input[type="radio"] { display: none; }
+  .likert input[type="radio"]:checked + span {
+    background: linear-gradient(135deg, var(--primary,#ff7ac4), #ff9fd4);
+    color: #fff; padding: 6px 12px; border-radius: 10px;
+  }
+  /* Proportional widths for the sentiment ends */
+  .likert label:nth-child(1) { flex: 1.3; }
+  .likert label:nth-child(2) { flex: 1.15; }
+  .likert label:nth-child(3) { flex: 0.9; }
+  .likert label:nth-child(4) { flex: 1.15; }
+  .likert label:nth-child(5) { flex: 1.3; }
+
+  /* Big, clickable actions */
+  .mbti-actions {
+    margin-top: 28px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+  }
+  .mbti-actions .btn {
+    border: none; border-radius: 14px; cursor: pointer;
+    padding: 14px 26px; font-size: 16px; font-weight: 700;
+    background: linear-gradient(135deg, var(--primary,#ff7ac4), #ff9fd4); color: #fff;
+    box-shadow: 0 12px 28px rgba(255,122,196,.25);
+  }
+  .mbti-actions .btn.ghost {
+    background: #f6f7ff; color: var(--ink,#1f2a44); border: 1px solid #e6e9ff; box-shadow: none;
+  }
+  .mbti-actions .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+  /* Result view cards/chips keep your theme */
+  .mbti-result-head { text-align: center; margin: 8px 0 18px; }
+  .mbti-type-badge { display: inline-block; padding: 8px 12px; border-radius: 12px; font-weight: 800; letter-spacing: .6px; background: #e8fff9; color: #0e6e61; border: 1px solid #c9f3ea; }
+  #mbtiTypeName { margin: 8px 0 6px; font-size: 20px; }
+  .mbti-grid { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 900px) { .mbti-grid { grid-template-columns: 1fr; } }
+  .mbti-card { background: #fff; border: 1px solid #f1e3f0; border-radius: 16px; padding: 14px; box-shadow: 0 6px 18px rgba(31,42,68,.06); }
+  .mbti-card-title { font-weight: 800; margin-bottom: 8px; }
+  .mbti-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { background: #fff9fc; border: 1px solid #ffd6ec; color: var(--ink,#1f2a44); border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 700; }
+  .mbti-list { margin: 0; padding-left: 18px; }
+  .mbti-list li { margin-bottom: 6px; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*CSS for Chatting interface*/
+
+
+    :root{
+      --bg: #f6f9ff;
+      --card: #ffffff;
+      --ink: #1f2a44;
+      --muted: #5b6b8c;
+      --primary: #ff7ac4;
+      --accent: #00c2a8;
+      --bubble-user: #ffe9f5;
+      --bubble-bot: #e8fff9;
+      --shadow: 0 10px 30px rgba(31,42,68,.12);
+      --radius: 16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: Inter, system-ui, sans-serif;
+      color:var(--ink); background: linear-gradient(135deg,#fff5fa 0%,#f2fff9 100%);
+      min-height:100vh; display:flex; align-items:center; justify-content:center; padding:12px;
+    }
+    .card{
+      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+      display:flex; flex-direction:column; width:100%; max-width:600px; height:90vh;
+    }
+    header{
+      padding:16px; border-bottom:1px solid #fce4f1; display:flex; align-items:center; justify-content:space-between;
+      background: radial-gradient(800px 800px at -20% -20%, #ffeaf5 0%, transparent 60%);
+    }
+    .logo{
+      width:40px; height:40px; border-radius:50%; overflow:hidden;
+      display:grid; place-items:center; background:none;
+    }
+    .logo img{
+      width:100%; height:100%; object-fit:cover;
+    }
+    .header-left{
+      display:flex; align-items:center; gap:12px;
+    }
+    h1{font-size:18px; margin:0}
+    .sub{font-size:13px; color:var(--muted);}
+    /* Icon button for New Chat */
+    .icon-btn{
+      border:none; background:#f1f3fe; color:var(--ink);
+      width:36px; height:36px; border-radius:50%; cursor:pointer;
+      border:1px solid #e6e9ff; display:flex; align-items:center; justify-content:center;
+      font-size:16px; transition:background 0.2s, transform 0.1s;
+    }
+    .icon-btn:hover{
+      background:#e6e9ff;
+    }
+    .icon-btn:active{
+      transform:scale(0.95);
+    }
+    .chat-body{
+      flex:1; padding:16px; overflow:auto; display:flex; flex-direction:column; gap:14px;
+      background:
+        radial-gradient(600px 120px at 20% 0%, rgba(0,194,168,.12) 0%, transparent 60%),
+        radial-gradient(600px 120px at 80% 0%, rgba(255,122,196,.12) 0%, transparent 60%);
+    }
+    .bubble{
+      max-width:80%; padding:12px 14px; border-radius:14px; box-shadow: 0 4px 16px rgba(0,0,0,.06);
+      line-height:1.45;
+    }
+    .bot{ align-self:flex-start; background:var(--bubble-bot); border:1px solid #c9f3ea; }
+    .user{ align-self:flex-end; background:var(--bubble-user); border:1px solid #ffd6ec; }
+    .chat-input{
+      display:flex; gap:10px; padding:12px; border-top:1px solid #fce4f1; background:#fff;
+    }
+    textarea{
+      flex:1; min-height:56px; max-height:140px; border-radius:12px;
+      border:1px solid #ffd6ec; background:#fff9fc; padding:12px; font-size:14px;
+      resize:none; outline:none;
+    }
+    textarea:focus{
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255,122,196,.12);
+    }
+    .btn{
+      border:none; background: linear-gradient(135deg, var(--primary), #ff9fd4); color:#fff;
+      padding:0 16px; font-weight:600; border-radius:12px; cursor:pointer; box-shadow:var(--shadow);
+    }
+    .footer{
+      padding:8px 16px; font-size:12px; color:var(--muted); border-top:1px solid #fce4f1; background:#fff;
+    }
+
+
+
+
+
+
+    /*Ya Allah*/
+    /* Smooth scroll for chat */
+.chat-body {
+  scroll-behavior: smooth;
+}
+
+/* Prefer reduced motion for users who request it */
+/* Smooth scroll for chat */
+.chat-body {
+  scroll-behavior: smooth;
+}
+
+/* Prefer reduced motion for users who request it */
+@media (prefers-reduced-motion: reduce) {
+  .chat-body { scroll-behavior: auto; }
+  .mbti-sheet { animation: none; }
+}
+
+/* Ensure assistant bubble is clearly visible */
+.bubble.bot {
+  /* You already defined background/border; ensure not hidden: */
+  display: block;
+}
+
+/* Optional: prevent accidental focus trap conflicts */
+body.modal-open {
+  overflow: hidden;
+}
+
+
