@@ -77,6 +77,11 @@ def init_db():
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
     """)
+    try:
+        db.execute("ALTER TABLE users ADD COLUMN name TEXT;")
+        db.commit()
+    except sqlite3.OperationalError:
+        pass
     # test_results table
     db.execute("""
     CREATE TABLE IF NOT EXISTS test_results (
@@ -147,7 +152,7 @@ def retrieve_chunks(query, top_k=4):
 # AI call
 # --------------------
 def get_ai_reply(messages):
-    payload = {"model": MODEL_NAME, "messages": messages}
+    payload = {"model": MODEL_NAME, "messages": messages, "max_tokens": 1000}
     try:
         r    = requests.post(OPENROUTER_URL, headers=HEADERS, json=payload, timeout=30)
         data = r.json()
@@ -174,49 +179,150 @@ def ensure_history():
         session["history"] = [{"role": "system", "content": prompt}]
 
 # --------------------
-# HTML page routes
+# Authentication decorator & routes
 # --------------------
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get("logged_in"):
+            # Check if this is an AJAX or API request
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json or request.path.startswith("/submit") or request.path == "/clear_history":
+                return jsonify({"success": False, "error": "Authentication required. Please log in."}), 401
+            return redirect(url_for("login_route"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route("/login", methods=["GET", "POST"])
+def login_route():
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+        
+        if not email or not password:
+            return jsonify({"success": False, "error": "Email and password are required."}), 400
+            
+        db = get_db()
+        user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        
+        if user and check_password_hash(user["password_hash"], password):
+            session["user_id"] = str(user["id"])
+            session["email"] = user["email"]
+            session["logged_in"] = True
+            session.pop("history", None)  # Rebuild with actual test history
+            return jsonify({"success": True, "redirect": "/homepage"})
+        else:
+            return jsonify({"success": False, "error": "Invalid email or password."}), 401
+            
+    # GET request
+    if session.get("logged_in"):
+        return redirect(url_for("homepage"))
+    return render_template("login.html")
+
+@app.route("/register", methods=["POST"])
+def register_route():
+    name = request.form.get("name", "")
+    email = request.form.get("email")
+    password = request.form.get("password")
+    
+    if not email or not password:
+        return jsonify({"success": False, "error": "Email and password are required."}), 400
+        
+    db = get_db()
+    existing = db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+    if existing:
+        return jsonify({"success": False, "error": "Email is already registered."}), 400
+        
+    password_hash = generate_password_hash(password)
+    db.execute(
+        "INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)",
+        (email, password_hash, name)
+    )
+    db.commit()
+    
+    user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+    session["user_id"] = str(user["id"])
+    session["email"] = user["email"]
+    session["logged_in"] = True
+    session.pop("history", None)  # Rebuild
+    
+    return jsonify({"success": True, "redirect": "/homepage"})
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login_route"))
+
 @app.route("/")
+@login_required
 def index():
-
-    if "user_id" not in session:
-        session["user_id"] = str(uuid.uuid4())
-
     ensure_history()
-
     return render_template(
         "index.html",
         history=session.get("history", [])
     )
 
 @app.route("/homepage")
-
+@login_required
 def homepage():
     return render_template("homepage.html")
 
 @app.route("/mbti")
-
+@login_required
 def mbti():
     return render_template("mbti.html")
 
 @app.route("/phq-9")
-
+@login_required
 def phq9():
     return render_template("phq-9.html")
 
 @app.route("/gad-7")
-
+@login_required
 def gad7():
     return render_template("gad-7.html")
+
+@app.route("/callback", methods=["POST"])
+def google_callback():
+    data = request.get_json() or {}
+    credential = data.get("credential")
+    if credential:
+        email = "mockuser@gmail.com"
+        db = get_db()
+        user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        if not user:
+            db.execute(
+                "INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)",
+                (email, generate_password_hash("mock_password"), "Google User")
+            )
+            db.commit()
+            user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+            
+        session["user_id"] = str(user["id"])
+        session["email"] = user["email"]
+        session["logged_in"] = True
+        session.pop("history", None)
+        return jsonify({"success": True, "redirect": "/homepage"})
+    return jsonify({"success": False, "error": "Missing credential"}), 400
+
+@app.route("/clear_history", methods=["POST"])
+@login_required
+def clear_history():
+    session["history"] = []
+    return jsonify({"success": True})
+
 
 # --------------------
 # Chat & test endpoints
 # --------------------
 @app.route("/submit", methods=["POST"])
-
+@login_required
 def submit():
-    user_id      = session["user_id"]
-    user_message = request.form["prompt"]
+    user_id      = session.get("user_id", str(uuid.uuid4()))
+    session["user_id"] = user_id
+    user_message = request.form.get("prompt", "")
+
+    if not user_message:
+        return render_template("index.html", history=session.get("history", []))
 
     # Always fetch fresh test results
     histories = get_all_histories(user_id)
@@ -229,7 +335,6 @@ def submit():
     chunks  = retrieve_chunks(user_message)
     context = "\n\n".join(chunks)
 
-    # Updated system message includes current tests
     system_msg = {
         "role": "system",
         "content": (
@@ -240,19 +345,16 @@ def submit():
             "If the PHQ-9 or GAD-7 scores suggest severe depression or anxiety, "
             "gently advise reaching out to a school counsellor. "
             "Do NOT diagnose, but do flag and escalate serious issues with supportive language.\n\n"
-            "Also, below is some evidence context, use it to enhance your responses."
             "EVIDENCE CONTEXT:\n" + context
         )
     }
 
-    # Construct message list fresh each time
     messages = [system_msg] + session.get("history", []) + [
         {"role": "user", "content": user_message}
     ]
 
     ai_reply = get_ai_reply(messages)
 
-    # Store conversation
     if "history" not in session:
         session["history"] = []
     session["history"].append({"role": "user", "content": user_message})
@@ -265,7 +367,7 @@ def submit():
 # Test submission with AI feedback
 # --------------------
 @app.route("/submit_mbti", methods=["POST"])
-
+@login_required
 def submit_mbti():
     print("=== MBTI Submit Triggered ===")
     user_id = session.get("user_id")
@@ -297,7 +399,7 @@ def submit_mbti():
 
 
 @app.route("/submit_phq9", methods=["POST"])
-
+@login_required
 def submit_phq9():
     print("=== PHQ-9 Submit Triggered ===")  # debug
     user_id = session.get("user_id")
@@ -350,7 +452,7 @@ def submit_phq9():
 
 
 @app.route("/submit_gad7", methods=["POST"])
-
+@login_required
 def submit_gad7():
     print("=== GAD-7 Submit Triggered ===")
     user_id = session.get("user_id")
@@ -398,14 +500,6 @@ def submit_gad7():
     print("AI reply appended to session history")
 
     return redirect(url_for("index"))
-
-def ensure_history():
-    if "history" not in session:
-
-        session["history"] = [{
-            "role": "system",
-            "content": SYSTEM_PROMPT
-        }]
 
 if __name__ == "__main__":
     os.environ.setdefault("PYTHONUNBUFFERED", "1")

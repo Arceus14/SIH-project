@@ -1,87 +1,333 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>SoulSpace</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='homepage.css') }}" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SoulSpace — Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
+    <style>
+      :root {
+        --background: 201 100% 13%;
+        --foreground: 0 0% 100%;
+        --muted-foreground: 240 4% 66%;
+        --border: 0 0% 18%;
+        --input: 0 0% 18%;
+        --card: 201 60% 10%;
+      }
+      html, body, #root { margin: 0; padding: 0; height: 100%; }
+      body { background: hsl(var(--background)); color: hsl(var(--foreground)); font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+      .liquid-glass { background: rgba(255,255,255,0.01); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border: none; box-shadow: inset 0 1px 1px rgba(255,255,255,0.1); position: relative; overflow: hidden; }
+      .liquid-glass::before { content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1.4px; background: linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.15) 20%, rgba(255,255,255,0) 40%, rgba(255,255,255,0) 60%, rgba(255,255,255,0.15) 80%, rgba(255,255,255,0.45) 100%); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; }
+      @keyframes fade-rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+      .animate-fade-rise         { animation: fade-rise 0.8s ease-out both; }
+      .animate-fade-rise-delay   { animation: fade-rise 0.8s ease-out 0.2s both; }
+      .animate-fade-rise-delay-2 { animation: fade-rise 0.8s ease-out 0.4s both; }
+      *::-webkit-scrollbar { width: 4px; }
+      *::-webkit-scrollbar-track { background: transparent; }
+      *::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 9999px; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel">
+      const { useEffect, useRef, useState } = React;
 
-<body>
-    <div class="background-stars"></div>
-    <video autoplay muted loop id="background-video" style="position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; z-index: -3; object-fit: cover;">
-        <source src="{{ url_for('static', filename='videos/homepage.mp4') }}" type="video/mp4" />
-        Your browser does not support the video tag.
-    </video>
-    <div id="video-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 100, 0.6); opacity: 0.5; z-index: -2;"></div>
-    <div class="app-container">
-        <div class="header">
-            <div class="logo">
-                <img src="{{ url_for('static', filename='images/homepage.png') }}" alt="Logo" style="height: 40px; width: auto" />
-                <h1>SoulSpace</h1>
-            </div>
-            <div class="header-icons">
-                <i class="fas fa-cog"></i>
-                <i class="fas fa-user-circle"></i>
-                <i class="fas fa-bell"></i>
-            </div>
-        </div>
-        <div class="main-content">
-            <div class="dashboard-card">
-                <div class="welcome-section">
-                    <p>Welcome back, Alex.</p>
-                    <h2>How are you feeling today?</h2>
-                    <div class="mood-emojis">
-                        <span class="emoji" data-mood="sad">😩</span>
-                        <span class="emoji" data-mood="tired">😴</span>
-                        <span class="emoji" data-mood="neutral">😐</span>
-                        <span class="emoji" data-mood="stressed">😟</span>
-                        <span class="emoji" data-mood="happy">☺️</span>
-                    </div>
+      function DashboardBackground() {
+        const canvasRef = useRef(null);
+        useEffect(() => {
+          const canvas = canvasRef.current;
+          if (!canvas) return;
+          const ctx = canvas.getContext('2d');
+          let animId, time = 0, pulseTimer = 0;
+          const COUNT = 120;
+          let stars = [];
+          function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+          function init() { resize(); stars = Array.from({ length: COUNT }, () => ({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, vx: (Math.random() - 0.5) * 0.36, vy: (Math.random() - 0.5) * 0.36, r: 0.5 + Math.random(), alpha: 0.12 + Math.random() * 0.13, pulse: 0 })); }
+          function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            pulseTimer += 16;
+            if (pulseTimer > 8000) { pulseTimer = 0; stars[Math.floor(Math.random() * COUNT)].pulse = 1; }
+            for (let i = 0; i < COUNT; i++) {
+              const s = stars[i];
+              s.x += s.vx; s.y += s.vy;
+              if (s.x < 0 || s.x > canvas.width) s.vx *= -1;
+              if (s.y < 0 || s.y > canvas.height) s.vy *= -1;
+              let dr = s.r, da = s.alpha;
+              if (s.pulse > 0) { s.pulse -= 16/2000; const t = 1 - s.pulse; dr = s.r + t*3; da = s.alpha*(1 - t*0.6); if (s.pulse <= 0) s.pulse = 0; }
+              ctx.beginPath(); ctx.arc(s.x, s.y, dr, 0, Math.PI*2); ctx.fillStyle = `rgba(255,255,255,${da})`; ctx.fill();
+              for (let j = i+1; j < COUNT; j++) { const t = stars[j]; const dx = s.x-t.x, dy = s.y-t.y, dist = Math.sqrt(dx*dx+dy*dy); if (dist < 140) { ctx.beginPath(); ctx.moveTo(s.x,s.y); ctx.lineTo(t.x,t.y); ctx.strokeStyle = `rgba(255,255,255,${0.03*(1-dist/140)})`; ctx.lineWidth=0.5; ctx.stroke(); } }
+            }
+            animId = requestAnimationFrame(draw);
+          }
+          init(); draw();
+          window.addEventListener('resize', resize);
+          return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', resize); };
+        }, []);
+        return React.createElement('canvas', { ref: canvasRef, className: 'absolute inset-0 w-full h-full z-0 pointer-events-none' });
+      }
+
+      const ASSESSMENT_CHIPS = [
+        { label: 'MBTI Personality', desc: 'Discover your personality type across 4 dimensions.', href: '/mbti' },
+        { label: 'PHQ-9 Depression Screening', desc: 'Clinically-validated 9-question depression screening.', href: '/phq-9' },
+        { label: 'GAD-7 Anxiety Screening', desc: '7-question screening for generalized anxiety disorder.', href: '/gad-7' },
+      ];
+      function SoulSpaceHome() {
+        const moodMap = { 'sad': 1, 'tired': 2, 'neutral': 3, 'stressed': 4, 'happy': 5 };
+        const moodEmojis = { 'sad': '😩', 'tired': '😴', 'neutral': '😐', 'stressed': '😟', 'happy': '☺️' };
+        
+        const [selectedMood, setSelectedMood] = useState('');
+        const [hasCheckedInToday, setHasCheckedInToday] = useState(false);
+        const [isMoodOpen, setIsMoodOpen] = useState(false);
+        const chartRef = useRef(null);
+        const chartInstanceRef = useRef(null);
+
+        useEffect(() => {
+          const today = new Date().toISOString().slice(0, 10);
+          const checkedIn = localStorage.getItem('lastSelectionDate') === today;
+          setHasCheckedInToday(checkedIn);
+
+          let stored = [];
+          try {
+            const raw = localStorage.getItem('moods');
+            if (raw) stored = JSON.parse(raw);
+          } catch(e) { console.warn(e); }
+
+          if (checkedIn && stored.length > 0) {
+            const last = stored[stored.length - 1];
+            if (last) setSelectedMood(last.mood);
+          }
+        }, []);
+
+        useEffect(() => {
+          if (!chartRef.current) return;
+          let stored = [];
+          try {
+            const raw = localStorage.getItem('moods');
+            if (raw) stored = JSON.parse(raw);
+          } catch(e) { console.warn(e); }
+
+          const labels = stored.length > 0 ? stored.map(item => item.label) : ['Start'];
+          const data = stored.length > 0 ? stored.map(item => moodMap[item.mood] || 3) : [3];
+
+          if (chartInstanceRef.current) {
+            chartInstanceRef.current.destroy();
+          }
+
+          const ctx = chartRef.current.getContext('2d');
+          chartInstanceRef.current = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Mood History',
+                data: data,
+                borderColor: 'rgba(255, 255, 255, 0.4)',
+                borderWidth: 2,
+                tension: 0.35,
+                fill: true,
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                pointBackgroundColor: '#fff',
+                pointBorderColor: 'rgba(255,255,255,0.8)',
+                pointRadius: 4,
+                pointHoverRadius: 6
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                x: {
+                  grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                  ticks: { color: 'rgba(255, 255, 255, 0.6)', font: { size: 10 } }
+                },
+                y: {
+                  min: 1,
+                  max: 5,
+                  grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                  ticks: {
+                    color: 'rgba(255, 255, 255, 0.6)',
+                    font: { size: 10 },
+                    stepSize: 1,
+                    callback: (value) => {
+                      const names = { 1: 'Sad', 2: 'Tired', 3: 'Neutral', 4: 'Stressed', 5: 'Happy' };
+                      return names[value] || '';
+                    }
+                  }
+                }
+              },
+              plugins: {
+                legend: { display: false }
+              }
+            }
+          });
+
+          return () => {
+            if (chartInstanceRef.current) {
+              chartInstanceRef.current.destroy();
+              chartInstanceRef.current = null;
+            }
+          };
+        }, [selectedMood, isMoodOpen]);
+
+        const selectMood = (mood) => {
+          if (hasCheckedInToday) {
+            alert("You have already checked in today. See you tomorrow!");
+            return;
+          }
+
+          setSelectedMood(mood);
+          setHasCheckedInToday(true);
+
+          let stored = [];
+          try {
+            const raw = localStorage.getItem('moods');
+            if (raw) stored = JSON.parse(raw);
+          } catch(e) { console.warn(e); }
+
+          const label = new Date().toLocaleDateString('en-US', { weekday: 'short' });
+          stored.push({ label, mood });
+          if (stored.length > 7) stored.shift();
+
+          localStorage.setItem('moods', JSON.stringify(stored));
+          localStorage.setItem('lastSelectionDate', new Date().toISOString().slice(0, 10));
+        };
+
+        return (
+          <div className="relative min-h-screen bg-[hsl(var(--background))] flex flex-col overflow-hidden">
+            <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover z-0 opacity-40 pointer-events-none">
+              <source src="/static/videos/homepage.mp4" type="video/mp4" />
+            </video>
+            {React.createElement(DashboardBackground)}
+            <nav className="relative z-10 w-full">
+              <div className="flex items-center justify-between px-8 py-6 max-w-7xl mx-auto">
+                <span className="text-3xl tracking-tight" style={ { fontFamily: "'Instrument Serif', serif" } }>
+                  SoulSpace <span className="text-xs align-super">✦</span>
+                </span>
+                <div className="hidden md:flex items-center gap-8">
+                  <a href="/homepage" className="text-sm text-foreground">Home</a>
+                  <a href="/" className="text-sm text-muted-foreground hover:text-white transition-colors">Seren</a>
+                  <a href="/mbti" className="text-sm text-muted-foreground hover:text-white transition-colors">Assessments</a>
+                  <a href="/logout" className="text-sm text-muted-foreground hover:text-white transition-colors no-underline">Logout</a>
                 </div>
-                <div class="button-grid">
-                    <div class="button-card">
-                        <i class="fas fa-moon"></i>
-                        <p>Sparkle</p>
-                    </div>
-                    <div class="button-card">
-                        <i class="fas fa-book"></i>
-                        <p>Daily Journal</p>
-                    </div>
-                    <div class="button-card">
-                        <i class="fas fa-gamepad"></i>
-                        <p>Mindful Games</p>
-                    </div>
-                    <div class="button-card">
-                        <i class="fas fa-users"></i>
-                        <p>Community Space</p>
-                    </div>
-                    <div class="button-card">
-                        <i class="fas fa-pencil-alt"></i>
-                        <p>Daily Prompt</p>
-                    </div>
-                    <div class="button-card">
-                        <i class="fas fa-stethoscope"></i>
-                        <p>Counselor Connect</p>
-                    </div>
+                <div className="flex items-center gap-4">
+                  <button onClick={() => setIsMoodOpen(!isMoodOpen)} className={`liquid-glass p-2.5 rounded-full text-white hover:scale-[1.03] transition-transform cursor-pointer relative ${isMoodOpen ? 'bg-white/10 border border-white/20' : ''}`} title="Mood Tracker">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.182 15.182a4.5 4.5 0 0 1-6.364 0M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                  </button>
+                  <a href="/" className="liquid-glass rounded-full px-6 py-2.5 text-sm text-white hover:scale-[1.03] transition-transform cursor-pointer no-underline">
+                    Talk to Seren
+                  </a>
                 </div>
+              </div>
+
+              {/* Collapsible Mood Tracker Dropdown */}
+              <div className={`absolute right-8 top-24 w-80 sm:w-[420px] p-6 liquid-glass rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 z-50 origin-top-right ${
+                isMoodOpen ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
+              }`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-white">Daily Mood Tracker</h3>
+                  <button onClick={() => setIsMoodOpen(false)} className="text-muted-foreground hover:text-white transition-colors text-lg font-bold focus:outline-none">
+                    &times;
+                  </button>
+                </div>
+                
+                {/* Mood Selector */}
+                <div className="flex flex-col items-center gap-3 mb-6 p-4 rounded-xl bg-white/5 border border-white/5">
+                  <p className="text-[11px] text-muted-foreground">How are you feeling today?</p>
+                  <div className="flex gap-2 sm:gap-3 justify-center">
+                    {Object.keys(moodEmojis).map(mood => (
+                      <button
+                        key={mood}
+                        onClick={() => selectMood(mood)}
+                        className={`text-2xl sm:text-3xl transition-all duration-300 transform hover:scale-125 focus:outline-none p-1.5 rounded-full ${
+                          selectedMood === mood ? 'bg-white/10 scale-125 border border-white/20' : 'opacity-60 hover:opacity-100'
+                        }`}
+                        title={mood.charAt(0).toUpperCase() + mood.slice(1)}
+                      >
+                        {moodEmojis[mood]}
+                      </button>
+                    ))}
+                  </div>
+                  {hasCheckedInToday && (
+                    <p className="text-[10px] text-muted-foreground">Checked in today: <span className="text-white font-medium">{selectedMood}</span></p>
+                  )}
+                </div>
+
+                {/* Mood Chart */}
+                <div className="flex flex-col h-[200px]">
+                  <h4 className="text-[11px] font-medium text-muted-foreground mb-2">7-Day Mood History</h4>
+                  <div className="flex-1 min-h-0 relative">
+                    <canvas ref={chartRef}></canvas>
+                  </div>
+                </div>
+              </div>
+            </nav>
+
+            <section className="px-8 pt-20 pb-12 text-center max-w-7xl mx-auto w-full relative z-10">
+              <h2 className="animate-fade-rise text-5xl font-normal" style={ { fontFamily: "'Instrument Serif', serif" } }>
+                Welcome back, Alex.
+              </h2>
+              <p className="animate-fade-rise-delay text-muted-foreground text-base sm:text-lg mt-3 max-w-md mx-auto">
+                Your safe space for emotional growth, personality insights, and mindful self-discovery.
+              </p>
+            </section>
+
+
+            <div className="grid md:grid-cols-3 gap-6 px-8 pb-20 max-w-7xl mx-auto w-full">
+              <div className="liquid-glass rounded-2xl p-8 animate-fade-rise flex flex-col">
+                <span className="liquid-glass rounded-full px-3 py-1 text-xs text-muted-foreground mb-4 inline-block w-fit">AI Companion</span>
+                <h3 className="text-2xl font-normal mb-3" style={ { fontFamily: "'Instrument Serif', serif" } }>Chat with Seren</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-6 flex-1">Ask anything. Reflect freely. Seren listens without judgment.</p>
+                <a href="/" className="border border-[hsl(var(--border))] rounded-full px-6 py-2.5 text-sm text-muted-foreground hover:text-white hover:border-white/30 transition-all w-fit no-underline">
+                  Open Chat →
+                </a>
+              </div>
+              <div className="liquid-glass rounded-2xl p-8 animate-fade-rise-delay flex flex-col">
+                <span className="liquid-glass rounded-full px-3 py-1 text-xs text-muted-foreground mb-4 inline-block w-fit">Assessments</span>
+                <h3 className="text-2xl font-normal mb-3" style={ { fontFamily: "'Instrument Serif', serif" } }>Your Assessments</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-6 flex-1">Take MBTI, PHQ-9, or GAD-7 to get personalized AI insights.</p>
+                <a href="/mbti" className="border border-[hsl(var(--border))] rounded-full px-6 py-2.5 text-sm text-muted-foreground hover:text-white hover:border-white/30 transition-all w-fit no-underline">
+                  View Assessments →
+                </a>
+              </div>
+              <div className="liquid-glass rounded-2xl p-8 animate-fade-rise-delay-2 flex flex-col">
+                <span className="liquid-glass rounded-full px-3 py-1 text-xs text-muted-foreground mb-4 inline-block w-fit">Coming soon</span>
+                <h3 className="text-2xl font-normal mb-3" style={ { fontFamily: "'Instrument Serif', serif" } }>Wellness Insights</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-6 flex-1">Complete all assessments to unlock personalized insights.</p>
+                <a href="/mbti" className="border border-[hsl(var(--border))] rounded-full px-6 py-2.5 text-sm text-muted-foreground hover:text-white hover:border-white/30 transition-all w-fit no-underline">
+                  Start Assessment →
+                </a>
+              </div>
             </div>
 
-            <!-- Mood timeline card -->
-            <div class="mood-timeline-card">
-                <h3>Your Mood Timeline</h3>
-                <canvas id="moodChart"></canvas>
-            </div>
-        </div>
-        <div class="quote">
-            <p>"Even the darkest night will end, and the sun will rise."</p>
-        </div>
-    </div>
-    <audio id="background-music" src="{{ url_for('static', filename='homepage.mp3') }}" autoplay loop style="display:none;"></audio>
-    <script src="{{ url_for('static', filename='js/homepage.js') }}"></script>
-</body>
+            <section className="px-8 pb-20 max-w-7xl mx-auto w-full">
+              <h2 className="animate-fade-rise text-3xl font-normal mb-8" style={ { fontFamily: "'Instrument Serif', serif" } }>
+                Take an assessment.
+              </h2>
+              <div className="grid md:grid-cols-3 gap-4">
+                {ASSESSMENT_CHIPS.map(item => (
+                  <div key={item.label} className="liquid-glass rounded-2xl p-6 flex flex-col">
+                    <h3 className="text-xl font-normal mb-2" style={ { fontFamily: "'Instrument Serif', serif" } }>{item.label}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-6 flex-1">{item.desc}</p>
+                    <a href={item.href} className="border border-[hsl(var(--border))] rounded-full px-6 py-2.5 text-sm text-muted-foreground hover:text-white hover:border-white/30 transition-all w-fit no-underline">
+                      Begin →
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+        );
+      }
 
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(React.createElement(SoulSpaceHome));
+    </script>
+  </body>
 </html>
