@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SoulSpace GAD-7</title>
-  <link rel="stylesheet" href="static/gad-7.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='gad-7.css') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
 <body>
   <div class="background">
     <video class="background-video" autoplay muted loop>
-      <source src="static/videos/gad-7.mp4" type="video/mp4">
+      <source src="{{ url_for('static', filename='videos/gad-7.mp4') }}" type="video/mp4">
       Your browser does not support the video tag.
     </video>
 
@@ -84,7 +84,7 @@
     onsubmit="return prepareAndSubmitGad7(event)"
   >
     <div class="logo">
-      <img src="static/images/phq-9.png" alt="SoulSpace Logo" class="logo-icon">
+      <img src="{{ url_for('static', filename='images/phq-9.png') }}" alt="SoulSpace Logo" class="logo-icon">
       <h1 class="logo-text">SoulSpace</h1>
       <p class="tagline">Find your place in the cosmos.</p>
     </div>
@@ -120,7 +120,7 @@
 
   </form>
 
-  <script type="module" src="static/js/gad-7.js"></script>
+  <script type="module" src="{{ url_for('static', filename='js/gad-7.js') }}"></script>
   <script>
     function prepareAndSubmitGad7(evt) {
       if (typeof currentQuestionIndex !== "undefined" && currentQuestionIndex < gad7Data.length) {
