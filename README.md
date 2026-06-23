@@ -158,7 +158,30 @@ OPENROUTER_MODEL=x-ai/grok-4-fast:free
 
 ## Running the Application
 
-Start the Flask server:
+Before starting SoulSpace for the first time, you must build the vector database used by Seren's Retrieval-Augmented Generation (RAG) system.
+
+### Step 1: Create the Vector Database
+
+Run:
+
+```bash
+python scrape_and_ingest.py
+```
+
+This will:
+
+* Scrape and process mental health resources
+* Generate embeddings using Sentence Transformers
+* Create the ChromaDB collection (`docs`)
+* Store the vector database in the `chroma_db/` directory
+
+⚠️ This step is required the first time you run the project.
+
+---
+
+### Step 2: Start the Application
+
+Run:
 
 ```bash
 flask run
@@ -170,11 +193,46 @@ or
 python app.py
 ```
 
-Open:
+---
+
+### Step 3: Open SoulSpace
+
+Visit:
 
 ```text
 http://127.0.0.1:5000
 ```
+
+You should now be able to:
+
+* Chat with Seren
+* Take the MBTI assessment
+* Complete the PHQ-9 depression screening
+* Complete the GAD-7 anxiety screening
+* Receive AI-powered responses informed by assessment history and RAG knowledge retrieval
+
+---
+
+### Quick Start
+
+```bash
+git clone https://github.com/yourusername/SoulSpace.git
+
+cd SoulSpace
+
+python -m venv venv
+
+source venv/bin/activate    # Linux/macOS
+# OR
+venv\Scripts\activate       # Windows
+
+pip install -r requirements.txt
+
+python scrape_and_ingest.py
+
+flask run
+```
+
 
 ---
 
