@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoulSpace GAD-7</title>
+  <link rel="stylesheet" href="static/gad-7.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+  <div class="background">
+    <video class="background-video" autoplay muted loop>
+      <source src="static/videos/gad-7.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star star-lg"></div>
+    <div class="star star-md"></div>
+    <div class="star star-sm"></div>
+    <div class="star star-lg"></div>
+    <div class="star star-md"></div>
+    <div class="star star-sm"></div>
+    <div class="star star-lg"></div>
+    <div class="star star-md"></div>
+    <div class="star star-sm"></div>
+    <div class="star star-lg"></div>
+    <div class="star star-md"></div>
+    <div class="star star-sm"></div>
+
+    <div class="shooting-star"></div>
+
+    <div class="constellation constellation-1"></div>
+    <div class="constellation constellation-2"></div>
+    <div class="constellation constellation-3"></div>
+    <div class="gradient-star"></div>
+    <div class="gradient-star"></div>
+    <div class="gradient-star"></div>
+    <div class="gradient-star"></div>
+    <div class="gradient-star"></div>
+    <div class="gradient-star"></div>
+    <div class="gradient-star"></div>
+    <div class="gradient-star"></div>
+  </div>
+
+  <div class="floating-icons">
+    <i class="fas fa-book-open icon-book"></i>
+    <i class="fas fa-headphones-alt icon-headphones"></i>
+    <i class="fas fa-pencil-alt icon-pencil"></i>
+    <i class="fas fa-moon icon-moon"></i>
+    <i class="fas fa-brain icon-brain"></i>
+  </div>
+
+  <!-- Wrap the test in a form -->
+  <form
+    id="gad7Form"
+    class="form-container"
+    method="post"
+    action="/submit_gad7"
+    onsubmit="return prepareAndSubmitGad7(event)"
+  >
+    <div class="logo">
+      <img src="static/images/phq-9.png" alt="SoulSpace Logo" class="logo-icon">
+      <h1 class="logo-text">SoulSpace</h1>
+      <p class="tagline">Find your place in the cosmos.</p>
+    </div>
+
+    <div class="progress-bar-container">
+      <div id="gad7ProgressBar" class="progress-bar"></div>
+    </div>
+    <div id="gad7ProgressText" class="progress-text">1 / 7</div>
+
+    <div id="gad7Stage" class="mbti-stage">
+      <p id="gad7Question" class="question">Loading...</p>
+      <div id="gad7Options" class="options-group phq9-options"></div>
+
+      <div class="navigation-buttons">
+        <button id="gad7PrevBtn" type="button" class="nav-button prev-button">Previous</button>
+        <button id="gad7NextBtn" type="button" class="nav-button next-button">Next</button>
+      </div>
+    </div>
+
+   <div id="gad7Result" class="results-container" hidden>
+  <h2>GAD-7 Score</h2>
+  <div id="gad7TotalScore" class="type-badge"></div>
+  <p id="gad7ScoreDesc" class="type-desc"></p>
+  <div id="gad7Tips" class="chips-container"></div>
+
+  <!-- Close & Submit like PHQ-9 -->
+  <button id="gad7CloseBtn" type="button" class="btn close-btn">Close & Submit</button>
+  <button type="button" class="nav-button retake-button" onclick="retakeTest()">Retake Test</button>
+</div>
+
+<!-- hidden field to store answers -->
+<input type="hidden" name="answers" id="gad7AnswersField" value="" />
+
+  </form>
+
+  <script type="module" src="static/js/gad-7.js"></script>
+  <script>
+    function prepareAndSubmitGad7(evt) {
+      if (typeof currentQuestionIndex !== "undefined" && currentQuestionIndex < gad7Data.length) {
+        alert("Please complete all questions before submitting.");
+        evt.preventDefault();
+        return false;
+      }
+      const hidden = document.getElementById("gad7AnswersField");
+      hidden.value = JSON.stringify(answers);
+      return true;
+    }
+  </script>
+</body>
+</html>

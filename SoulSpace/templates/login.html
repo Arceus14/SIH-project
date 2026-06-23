@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoulSpace Login</title>
+    <link rel="stylesheet" href="static/login.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body>
+    <video class="background-video" autoplay muted loop>
+        <source src="static/videos/login.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
+    <div class="floating-icons">
+        <i class="fas fa-book-open icon-book"></i>
+        <i class="fas fa-headphones-alt icon-headphones"></i>
+        <i class="fas fa-pencil-alt icon-pencil"></i>
+        <i class="fas fa-moon icon-moon"></i>
+        <i class="fas fa-brain icon-brain"></i>
+    </div>
+
+    <div class="login-container">
+        <div class="logo">
+            <img src="static/images/login.png" alt="SoulSpace Logo" class="logo-icon">
+            <h1 class="logo-text">SoulSpace</h1>
+            <p class="tagline">Relax, breath and grow in your own orbit</p>
+
+
+            <form class="login-form" action="/login" method="POST">
+                <div class="input-group">
+                    <i class="fas fa-envelope input-icon"></i>
+                    <input name="email" type="text" placeholder="Email / Username" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input name="password" type="password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="login-button">Enter Your Space</button>
+            </form>
+
+            <div class="or-separator">
+                <hr>
+                <span>OR</span>
+                <hr>
+            </div>
+
+
+            <button id="customGoogleBtn" class="google-signin-button">
+                <i class="fab fa-google google-icon"></i>
+                Sign in with Google
+            </button>
+
+            <div class="links">
+                <a href="#">Forgot Password?</a>
+                <a href="#">New to SoulSpace? Create Account</a>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+    function handleCredentialResponse(response) {
+        fetch("/callback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ credential: response.credential })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect;
+            } else {
+                alert("Login failed: " + data.error);
+            }
+        });
+    }
+
+    window.onload = function () {
+        google.accounts.id.initialize({
+            client_id: "956691593215-hv2vn0jm693gh4ddktdpi135o7jc2pof.apps.googleusercontent.com",
+            callback: handleCredentialResponse
+        });
+
+        // Render the Google sign-in button into your custom button
+        google.accounts.id.renderButton(
+            document.getElementById("customGoogleBtn"),
+            { theme: "outline", size: "large", logo_alignment: "left" }
+        );
+    };
+</script>
+
+
+
+</body>
+</html>

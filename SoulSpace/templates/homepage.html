@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SoulSpace</title>
+    <link rel="stylesheet" href="static/homepage.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="background-stars"></div>
+    <video autoplay muted loop id="background-video" style="position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; z-index: -3; object-fit: cover;">
+        <source src="static/videos/homepage.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+    </video>
+    <div id="video-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 100, 0.6); opacity: 0.5; z-index: -2;"></div>
+    <div class="app-container">
+        <div class="header">
+            <div class="logo">
+                <img src="static/images/homepage.png" alt="Logo" style="height: 40px; width: auto" />
+                <h1>SoulSpace</h1>
+            </div>
+            <div class="header-icons">
+                <i class="fas fa-cog"></i>
+                <i class="fas fa-user-circle"></i>
+                <i class="fas fa-bell"></i>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="dashboard-card">
+                <div class="welcome-section">
+                    <p>Welcome back, Alex.</p>
+                    <h2>How are you feeling today?</h2>
+                    <div class="mood-emojis">
+                        <span class="emoji" data-mood="sad">😩</span>
+                        <span class="emoji" data-mood="tired">😴</span>
+                        <span class="emoji" data-mood="neutral">😐</span>
+                        <span class="emoji" data-mood="stressed">😟</span>
+                        <span class="emoji" data-mood="happy">☺️</span>
+                    </div>
+                </div>
+                <div class="button-grid">
+                    <div class="button-card">
+                        <i class="fas fa-moon"></i>
+                        <p>Sparkle</p>
+                    </div>
+                    <div class="button-card">
+                        <i class="fas fa-book"></i>
+                        <p>Daily Journal</p>
+                    </div>
+                    <div class="button-card">
+                        <i class="fas fa-gamepad"></i>
+                        <p>Mindful Games</p>
+                    </div>
+                    <div class="button-card">
+                        <i class="fas fa-users"></i>
+                        <p>Community Space</p>
+                    </div>
+                    <div class="button-card">
+                        <i class="fas fa-pencil-alt"></i>
+                        <p>Daily Prompt</p>
+                    </div>
+                    <div class="button-card">
+                        <i class="fas fa-stethoscope"></i>
+                        <p>Counselor Connect</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mood timeline card -->
+            <div class="mood-timeline-card">
+                <h3>Your Mood Timeline</h3>
+                <canvas id="moodChart"></canvas>
+            </div>
+        </div>
+        <div class="quote">
+            <p>"Even the darkest night will end, and the sun will rise."</p>
+        </div>
+    </div>
+    <audio id="background-music" src="static/homepage.mp3" autoplay loop style="display:none;"></audio>
+    <script src="static/js/homepage.js"></script>
+</body>
+
+</html>

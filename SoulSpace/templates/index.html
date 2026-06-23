@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8" />
+        <title>Serenity — Mental Health Companion</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}" />
+        <link href="https://fonts.googleapis.com/css2?
+                    family=Montserrat:wght@600;700&
+                    family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+    </head>
+
+    <body>
+        <!-- cosmic gradient + stars -->
+        <div class="background">
+            <div class="stars"></div>
+        </div>
+
+        <!-- drifting sparkles -->
+        <div class="sparkles">
+            <div class="sparkle"></div>
+            <div class="sparkle"></div>
+            <div class="sparkle"></div>
+            <div class="sparkle"></div>
+            <div class="sparkle"></div>
+        </div>
+
+        <section class="card">
+            <header class="card-header">
+                <div class="logo-group">
+                    <img src="static/seren.jpg" alt="Sparkle Logo" class="logo-img" />
+                    <div>
+                        <h1 class="logo-title">Seren</h1>
+                        <div class="logo-subtitle">
+                            Your positive mental health companion
+                        </div>
+                    </div>
+                </div>
+                <nav class="header-nav">
+                    <form action="/homepage">
+                        <button type="submit" class="icon-btn" title="New Chat">Home</button>
+                    </form>
+                    <button class="icon-btn" title="New Chat" onclick="confirmNewChat()">⟳</button>
+                    <button class="icon-btn" title="MBTI Quiz" onclick="location.href='/mbti'">🧠</button>
+                    <button class="icon-btn" title="PHQ-9 Test" onclick="location.href='/phq-9'">📝</button>
+                    <button class="icon-btn" title="GAD-7 Test" onclick="location.href='/gad-7'">💭</button>
+                    <button class="btn login-btn" onclick="location.href='/logout'">Logout</button>
+                </nav>
+            </header>
+
+            <div class="chat-body" id="chatBody" aria-live="polite">
+                {% set msgs = session.get('history', []) %}
+                {% if not msgs %}
+                    <div class="bubble bot">
+                        Hi! I’m Serenity ✨ What’s on your mind today?
+                    </div>
+                {% else %}
+                    {% for msg in msgs %}
+                        <div class="bubble {{ 'user' if msg.role=='user' else 'bot' }}">
+                            {{ msg.content | safe }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+
+
+            <form id="chatForm" class="chat-input" action="/submit" method="POST">
+                <textarea id="chatText" name="prompt" placeholder="Type your message…" required></textarea>
+                <button class="btn send-btn" type="submit">Send</button>
+            </form>
+
+            <footer class="card-footer">
+                For urgent help, reach out to a trusted adult or local helpline immediately.
+            </footer>
+        </section>
+
+        <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+    </body>
+
+</html>

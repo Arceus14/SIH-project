@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoulSpace MBTI</title>
+  <link rel="stylesheet" href="static/mbti.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+  <div class="background">
+    <!-- Video and stars omitted for brevity -->
+  </div>
+
+  <div class="floating-icons">
+    <i class="fas fa-book-open icon-book"></i>
+    <i class="fas fa-headphones-alt icon-headphones"></i>
+    <i class="fas fa-pencil-alt icon-pencil"></i>
+    <i class="fas fa-moon icon-moon"></i>
+    <i class="fas fa-brain icon-brain"></i>
+  </div>
+
+  <form id="mbtiForm" class="form-container" method="post" action="/submit_mbti" onsubmit="return prepareAndSubmitMBTI(event)">
+    <div class="logo">
+      <img src="static/images/mbti.png" alt="SoulSpace Logo" class="logo-icon">
+      <h1 class="logo-text">SoulSpace</h1>
+      <p class="tagline">Find your place in the cosmos.</p>
+    </div>
+
+    <div class="progress-bar-container">
+      <div id="mbtiProgressBar" class="progress-bar"></div>
+    </div>
+    <div id="mbtiProgressText" class="progress-text">1 / 16</div>
+
+    <div id="mbtiStage" class="mbti-stage">
+      <p id="mbtiQuestion" class="question">Loading...</p>
+      <div id="mbtiOptions" class="options-group"></div>
+      <div class="navigation-buttons">
+        <button id="mbtiPrevBtn" type="button" class="nav-button prev-button">Previous</button>
+        <button id="mbtiNextBtn" type="button" class="nav-button next-button">Next</button>
+      </div>
+    </div>
+      <div id="mbtiResult" class="results-container" hidden>
+        <h2>Your MBTI Type</h2>
+        <div id="mbtiTypeBadge" class="type-badge"></div>
+        <h3 id="mbtiTypeName" class="type-name"></h3>
+        <p id="mbtiTypeDesc" class="type-desc"></p>
+        <div id="mbtiChips" class="chips-container"></div>
+        <h4>Tips for Studying:</h4>
+        <ul id="mbtiTips" class="tips-list"></ul>
+
+        <!-- Only one button to submit -->
+        <button id="mbtiCloseBtn" type="button" class="btn close-btn">Close & Submit</button>
+        <button type="button" class="nav-button retake-button" onclick="retakeMBTI()">Retake Test</button>
+      </div>
+
+      <!-- Hidden field: only MBTI type -->
+      <input type="hidden" name="mbti_type" id="mbtiTypeField" value="" />
+  </form>
+
+  <script type="module" src="static/js/mbti.js"></script>
+  <script>
+    function prepareAndSubmitMBTI(evt) {
+      if (typeof currentQuestionIndex !== "undefined" && currentQuestionIndex < 16) {
+        alert("Please complete all questions before submitting.");
+        evt.preventDefault();
+        return false;
+      }
+
+      document.getElementById("mbtiAnswersField").value = JSON.stringify(answers || []);
+      document.getElementById("mbtiTypeField").value = window.lastMBTIType || "";
+      document.getElementById("mbtiScoresField").value = JSON.stringify(computeScores ? computeScores() : {});
+
+      return true;
+    }
+  </script>
+  <script>
+function prepareAndSubmitMBTI(evt) {
+  // Prevent submission if MBTI type not computed yet
+  if (!window.lastMBTIType) {
+    alert("Please complete all questions before submitting.");
+    evt.preventDefault();
+    return false;
+  }
+
+  // Set hidden field values for backend
+  document.getElementById("mbtiAnswersField").value = JSON.stringify(answers || []);
+  document.getElementById("mbtiTypeField").value = window.lastMBTIType;
+  document.getElementById("mbtiScoresField").value = JSON.stringify(computeScores ? computeScores() : {});
+
+  // allow form submission
+  return true;
+}
+</script>
+
+</body>
+</html>
