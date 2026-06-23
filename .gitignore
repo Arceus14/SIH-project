@@ -3,10 +3,7 @@
 __pycache__/
 chroma_db/
 
-# Large media files - store separately
-SoulSpace/static/videos/
-SoulSpace/static/*.mp3
+# Large media files tracked via Git LFS
+# Images stored locally only
 SoulSpace/static/images/
 SoulSpace/static/seren.jpg
-*.mp4
-*.mp3
